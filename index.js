@@ -101,6 +101,12 @@ async function run() {
             const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
             res.send(result);
         })
+        // update
+        app.get('/updateVolunteer/:id', async (req, res) => {
+            // const cursor = usersCollection.find()
+            const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
+            res.send(result);
+        })
 
         app.get('/needVolunteer/:email', async (req, res) => {
             // const cursor = usersCollection.find()
