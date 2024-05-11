@@ -5,7 +5,7 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
-const port = process.env.PORT || 5000 ;
+const port = process.env.PORT || 5000;
 
 // // middleware
 // app.use(cors({
@@ -61,7 +61,7 @@ async function run() {
         await client.connect();
 
         const volunteerCollection = client.db('volunteer').collection('volunteerNeed');
-        // const bookingCollection = client.db('carDoctor').collection('bookings');
+        const beVolunteerCollection = client.db('volunteer').collection('beVolunteer');
 
         // auth related api
         // app.post('/jwt', logger, async (req, res) => {
@@ -86,6 +86,18 @@ async function run() {
 
 
 
+        // be volunteer post store in other collection  database
+        app.post('/beVolunteer', async (req, res) => {
+            const volunteer = req.body;
+            console.log(volunteer);
+            const result = await beVolunteerCollection.insertOne(volunteer);
+            res.send(result);
+        });
+        // be volunteer post store in other collection  database
+
+
+
+
 
         // services related api
 
@@ -102,12 +114,7 @@ async function run() {
             res.send(result);
         })
 
-        //for  update find
-        app.get('/updateVolunteer/:id', async (req, res) => {
-            // const cursor = usersCollection.find()
-            const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
-            res.send(result);
-        })
+
 
         app.get('/needVolunteer/:email', async (req, res) => {
             // const cursor = usersCollection.find()
@@ -131,7 +138,7 @@ async function run() {
         //     res.send(result);
         // })
 
-
+        // need volunteer add data base 
         app.post('/needVolunteer', async (req, res) => {
             const volunteer = req.body;
             console.log(volunteer);
@@ -140,7 +147,22 @@ async function run() {
         });
 
 
+        // be volunteer find
+        //for  update find
+        app.get('/beVolunteer/:id', async (req, res) => {
+            // const cursor = usersCollection.find()
+            const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
+            res.send(result);
+        })
 
+
+
+        //for  update find
+        app.get('/updateVolunteer/:id', async (req, res) => {
+            // const cursor = usersCollection.find()
+            const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
+            res.send(result);
+        })
 
         // update need volunteer
         app.put('/update/:id', async (req, res) => {
@@ -151,9 +173,9 @@ async function run() {
             const options = { upsert: true }
             const updateVolunteer = {
                 $set: {
-    
+
                     // { userName, email, Thumbnail, Title, description, Location, NoVolunteers, startDate, selectedCategory }
-    
+
                     Thumbnail: user.Thumbnail,
                     Title: user.Title,
                     description: user.description,
@@ -161,14 +183,14 @@ async function run() {
                     NoVolunteers: user.NoVolunteers,
                     startDate: user.startDate,
                     selectedCategory: user.selectedCategory,
-                    
-    
+
+
                 }
             }
-    
+
             const result = await volunteerCollection.updateOne(filter, updateVolunteer, options);
             res.send(result);
-    
+
         })
 
 
@@ -189,13 +211,13 @@ async function run() {
 
         app.delete('/delete/:id', async (req, res) => {
             const id = req.params.id;
-    
+
             console.log('delete form database ', id);
-    
+
             const query = { _id: new ObjectId(id) }
             const result = await volunteerCollection.deleteOne(query);
             res.send(result);
-    
+
         })
 
 
