@@ -101,7 +101,8 @@ async function run() {
             const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
             res.send(result);
         })
-        // update
+
+        //for  update find
         app.get('/updateVolunteer/:id', async (req, res) => {
             // const cursor = usersCollection.find()
             const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
@@ -137,6 +138,38 @@ async function run() {
             const result = await volunteerCollection.insertOne(volunteer);
             res.send(result);
         });
+
+
+
+
+        // update need volunteer
+        app.put('/update/:id', async (req, res) => {
+            const id = req.params.id;
+            const user = req.body;
+            console.log(id, user);
+            const filter = { _id: new ObjectId(id) }
+            const options = { upsert: true }
+            const updateVolunteer = {
+                $set: {
+    
+                    // { userName, email, Thumbnail, Title, description, Location, NoVolunteers, startDate, selectedCategory }
+    
+                    Thumbnail: user.Thumbnail,
+                    Title: user.Title,
+                    description: user.description,
+                    Location: user.Location,
+                    NoVolunteers: user.NoVolunteers,
+                    startDate: user.startDate,
+                    selectedCategory: user.selectedCategory,
+                    
+    
+                }
+            }
+    
+            const result = await volunteerCollection.updateOne(filter, updateVolunteer, options);
+            res.send(result);
+    
+        })
 
 
 
