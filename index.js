@@ -73,10 +73,10 @@ async function run() {
             //     let result = await volunteerCollection.find().toArray(); // Fetch all 
             //     res.send(result);
             // }
-            if(req.params.key){
+            if (req.params.key) {
                 let result = await volunteerCollection.find({
                     "$or": [
-                        { Title: { $regex: req.params.key ,$options: 'i' } }
+                        { Title: { $regex: req.params.key, $options: 'i' } }
                     ]
                 }).toArray();
                 res.send(result);
@@ -84,15 +84,36 @@ async function run() {
 
             }
 
-            
+
         })
+
+        // sort date
+        // app.get('/sortDate', async (req, res) => {
+        //     const result = await volunteerCollection.find().sort({ startDate: 1 }).limit(6).toArray();
+        //     res.send(result);
+        //     // console.log(result);
+
+        // })
+        app.get('/sortDate', async (req, res) => {
+            try {
+                const result = await volunteerCollection.find().sort({ startDate: 1 }).limit(6).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send("Internal Server Error");
+            }
+        });
+
+
+
+
 
         // app.get('/searchAll', async (req, res) => {
         //     if (!req.params.key) { 
         //         const result = await volunteerCollection.find().toArray(); // Fetch all 
         //         res.send(result);
         //     }
-                      
+
         // })
 
 
@@ -123,10 +144,67 @@ async function run() {
         // be volunteer post store in other collection  database
         app.post('/beVolunteer', async (req, res) => {
             const volunteer = req.body;
-            console.log(volunteer);
+
+
+            // check duplicate search this two element
+            const query1 = {
+                volunteerEmail: volunteer.volunteerEmail,
+                jobId: volunteer.jobId,
+            }
+            
+            const alreadyApplied = await beVolunteerCollection.findOne(query1)
+            console.log('here',alreadyApplied)
+            // if (alreadyApplied) {
+            //     return res
+            //         .status(400)
+            //         .send('You have Already Added')
+            // }
+
+
             const result = await beVolunteerCollection.insertOne(volunteer);
+            // console.log(volunteer);
+            // const i =3;
+
+            const updateVolunteer = {
+                $inc: { NoVolunteers: 1 }
+            }
+            const query = { _id: new ObjectId(volunteer.jobId) }
+            // console.log(query);
+            const updateCount = await volunteerCollection.updateOne(query, updateVolunteer)
             res.send(result);
+
+
         });
+
+
+        // app.post('/beVolunteer', async (req, res) => {
+        //     try {
+        //         const volunteer = req.body;
+
+        //         // Insert the volunteer document into beVolunteerCollection
+        //         const insertResult = await beVolunteerCollection.insertOne(volunteer);
+        //         if (insertResult.insertedCount !== 1) {
+        //             throw new Error('Failed to insert volunteer');
+        //         }
+
+        //         // Update the volunteer count in volunteerCollection
+        //         const jobId = new ObjectId(volunteer.jobId);
+        //         const updateResult = await volunteerCollection.updateOne(
+        //             { _id: jobId },
+        //             { $inc: { NoVolunteers: 1 } }
+        //         );
+        //         if (updateResult.modifiedCount !== 1) {
+        //             throw new Error('Failed to update volunteer count');
+        //         }
+
+        //         // Send a success response
+        //         res.status(200).json({ message: 'Volunteer added successfully' });
+        //     } catch (error) {
+        //         // Send an error response if any error occurs
+        //         console.error('Error processing /beVolunteer request:', error);
+        //         res.status(500).json({ error: 'Internal server error' });
+        //     }
+        // });
         // be volunteer post store in other collection  database
 
 
