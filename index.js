@@ -63,6 +63,40 @@ async function run() {
         const volunteerCollection = client.db('volunteer').collection('volunteerNeed');
         const beVolunteerCollection = client.db('volunteer').collection('beVolunteer');
 
+
+        // search function
+        app.get('/search/:key', async (req, res) => {
+            // const cursor = usersCollection.find()
+            console.log(req.params.key)
+
+            // if (!req.params.key) { 
+            //     let result = await volunteerCollection.find().toArray(); // Fetch all 
+            //     res.send(result);
+            // }
+            if(req.params.key){
+                let result = await volunteerCollection.find({
+                    "$or": [
+                        { Title: { $regex: req.params.key ,$options: 'i' } }
+                    ]
+                }).toArray();
+                res.send(result);
+                // console.log(result)
+
+            }
+
+            
+        })
+
+        // app.get('/searchAll', async (req, res) => {
+        //     if (!req.params.key) { 
+        //         const result = await volunteerCollection.find().toArray(); // Fetch all 
+        //         res.send(result);
+        //     }
+                      
+        // })
+
+
+
         // auth related api
         // app.post('/jwt', logger, async (req, res) => {
         //     const user = req.body;
