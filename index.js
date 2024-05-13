@@ -151,9 +151,10 @@ async function run() {
                 volunteerEmail: volunteer.volunteerEmail,
                 jobId: volunteer.jobId,
             }
-            
-            const alreadyApplied = await beVolunteerCollection.findOne(query1)
-            console.log('here',alreadyApplied)
+
+
+            // const alreadyApplied = await beVolunteerCollection.findOne(query1)
+            // console.log('here',alreadyApplied)
             // if (alreadyApplied) {
             //     return res
             //         .status(400)
@@ -175,6 +176,23 @@ async function run() {
 
 
         });
+
+
+        //cancel request  update no volunteer
+        app.post('/noVolunteerUpdate/:jobId', async (req, res) => {
+            const jobId = req.params.jobId;
+            console.log('request cancel id', jobId);
+
+            const updateVolunteer = {
+                $inc: { NoVolunteers: 1 }
+            };
+            const query = { _id: new ObjectId(jobId) };
+            const updateCount = await volunteerCollection.updateOne(query, updateVolunteer);
+            console.log(updateCount);
+            res.send(updateCount);
+        });
+
+
 
 
         // app.post('/beVolunteer', async (req, res) => {
@@ -227,12 +245,23 @@ async function run() {
         })
 
 
-
+        // email using  to get all my volunteer Post
         app.get('/needVolunteer/:email', async (req, res) => {
             // const cursor = usersCollection.find()
             const result = await volunteerCollection.find({ email: req.params.email }).toArray();
             res.send(result);
+
         })
+        // email using  to get all my request  be volunteer Post
+        app.get('/requestVolunteer/:email', async (req, res) => {
+            // const cursor = usersCollection.find()
+            const result = await beVolunteerCollection.find({ volunteerEmail: req.params.email }).toArray();
+            res.send(result);
+        })
+
+
+
+
 
 
         // bookings 
@@ -321,6 +350,9 @@ async function run() {
         //     res.send(result);
         // })
 
+
+
+        // delete post need volunteer
         app.delete('/delete/:id', async (req, res) => {
             const id = req.params.id;
 
@@ -328,6 +360,17 @@ async function run() {
 
             const query = { _id: new ObjectId(id) }
             const result = await volunteerCollection.deleteOne(query);
+            res.send(result);
+
+        })
+        // delete my request
+        app.delete('/requestDelete/:id', async (req, res) => {
+            const id = req.params.id;
+
+            console.log('delete form database ', id);
+
+            const query = { _id: new ObjectId(id) }
+            const result = await beVolunteerCollection.deleteOne(query);
             res.send(result);
 
         })
