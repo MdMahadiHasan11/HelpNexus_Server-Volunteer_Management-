@@ -167,7 +167,7 @@ async function run() {
             // const i =3;
 
             const updateVolunteer = {
-                $inc: { NoVolunteers: 1 }
+                $inc: { NoVolunteers: -1 }
             }
             const query = { _id: new ObjectId(volunteer.jobId) }
             // console.log(query);
