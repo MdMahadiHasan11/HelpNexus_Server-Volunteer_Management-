@@ -265,8 +265,16 @@ async function run() {
 
 
         // email using  to get all my volunteer Post
-        app.get('/needVolunteer/:email', async (req, res) => {
+        app.get('/needVolunteer/:email',logger,verifyToken, async (req, res) => {
             // const cursor = usersCollection.find()
+
+            console.log(req.params.email);
+                console.log('token owner info', req.user.email)
+                if(req.user.email !== req.params.email){
+                    return res.status(403).send({message: 'forbidden access from request Volunteer'})
+                }
+
+
             const result = await volunteerCollection.find({ email: req.params.email }).toArray();
             res.send(result);
 
