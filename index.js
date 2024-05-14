@@ -41,19 +41,21 @@ const logger = (req, res, next) => {
     next();
 }
 
-// const verifyToken = (req, res, next) =>{
-//     const token = req?.cookies?.token; 
-//     if(!token){
-//         return res.status(401).send({message: 'unauthorized access'})
-//     }
-//     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
-//         if(err){
-//             return res.status(401).send({message: 'unauthorized access'})
-//         }
-//         req.user = decoded;
-//         next();
-//     })
-// }
+const verifyToken = (req, res, next) =>{
+    const token = req?.cookies?.token; 
+    if(!token){
+        return res.status(401).send({message: 'unauthorized access'})
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) =>{
+        if(err){
+            return res.status(401).send({message: 'unauthorized access'})
+        }
+        req.user = decoded;
+        next();
+    })
+}
+
+
 
 async function run() {
     try {
@@ -119,7 +121,7 @@ async function run() {
 
 
         // auth related api logger,
-        app.post('/jwtt', async (req, res) => {
+        app.post('/jwtt',logger, async (req, res) => {
             const user = req.body;
             console.log('user for token', user);
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
@@ -234,11 +236,18 @@ async function run() {
 
         // services related api
 
-        app.get('/needVolunteer', logger , async (req, res) => {
+        app.get('/needVolunteer', async (req, res) => {
 
-            // 
             // console.log(req.query.email);
-            console.log('token owner info cok cok', req.cookies)
+            // console.log('token owner info', req.user)
+
+            // if(req.user.email !== req.query.email){
+            //     return res.status(403).send({message: 'forbidden access'})
+            // }
+
+
+            // console.log(req.query.email);
+            // console.log('token owner info cok cok', req.cookies)
             // 
 
 
@@ -262,8 +271,15 @@ async function run() {
             res.send(result);
 
         })
-        // email using  to get all my request  be volunteer Post
-        app.get('/requestVolunteer/:email', async (req, res) => {
+        // email using  to get all my request  be volunteer Post ,verifyToken
+        app.get('/requestVolunteer/:email',logger,verifyToken, async (req, res) => {
+
+                console.log(req.params.email);
+                console.log('token owner info', req.user.email)
+                if(req.user.email !== req.params.email){
+                    return res.status(403).send({message: 'forbidden access from request Volunteer'})
+                }
+
             // const cursor = usersCollection.find()
             const result = await beVolunteerCollection.find({ volunteerEmail: req.params.email }).toArray();
             res.send(result);
