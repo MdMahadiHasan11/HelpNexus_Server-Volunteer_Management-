@@ -129,313 +129,352 @@ async function run() {
 
 
 
-    // app.get('/searchAll', async (req, res) => {
-    //     if (!req.params.key) { 
-    //         const result = await volunteerCollection.find().toArray(); // Fetch all 
-    //         res.send(result);
-    //     }
+        // app.get('/searchAll', async (req, res) => {
+        //     if (!req.params.key) { 
+        //         const result = await volunteerCollection.find().toArray(); // Fetch all 
+        //         res.send(result);
+        //     }
 
-    // })
-
-
-
-    // auth related api logger,
-    app.post('/jwtt', logger, async (req, res) => {
-        const user = req.body;
-        console.log('user for token', user);
-        const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+        // })
 
 
-        // res.send({token});
 
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none'
+        // auth related api logger,
+        app.post('/jwtt', logger, async (req, res) => {
+            const user = req.body;
+            console.log('user for token', user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+
+
+            // res.send({token});
+
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none'
+            })
+                .send({ success: true });
         })
-            .send({ success: true });
-    })
 
-    app.post('/logout', async (req, res) => {
-        const user = req.body;
-        console.log('logging out', user);
-        res.clearCookie('token', { maxAge: 0 }).send({ success: true })
-    })
+        app.post('/logout', async (req, res) => {
+            const user = req.body;
+            console.log('logging out', user);
+            res.clearCookie('token', { maxAge: 0 }).send({ success: true })
+        })
 
 
 
 
-    // be volunteer post store in other collection  database
-    app.post('/beVolunteer', async (req, res) => {
-        const volunteer = req.body;
+        // be volunteer post store in other collection  database
+        app.post('/beVolunteer', async (req, res) => {
+            const volunteer = req.body;
 
 
-        // check duplicate search this two element
-        const query1 = {
-            volunteerEmail: volunteer.volunteerEmail,
-            jobId: volunteer.jobId,
-        }
-
-
-        // const alreadyApplied = await beVolunteerCollection.findOne(query1)
-        // console.log('here',alreadyApplied)
-        // if (alreadyApplied) {
-        //     return res
-        //         .status(400)
-        //         .send('You have Already Added')
-        // }
-
-
-        const result = await beVolunteerCollection.insertOne(volunteer);
-        // console.log(volunteer);
-        // const i =3;
-
-        const updateVolunteer = {
-            $inc: { NoVolunteers: -1 }
-        }
-        const query = { _id: new ObjectId(volunteer.jobId) }
-        // console.log(query);
-        const updateCount = await volunteerCollection.updateOne(query, updateVolunteer)
-        res.send(result);
-
-
-    });
-
-
-    //cancel request  update no volunteer
-    app.post('/noVolunteerUpdate/:jobId', async (req, res) => {
-        const jobId = req.params.jobId;
-        console.log('request cancel id', jobId);
-
-        const updateVolunteer = {
-            $inc: { NoVolunteers: 1 }
-        };
-        const query = { _id: new ObjectId(jobId) };
-        const updateCount = await volunteerCollection.updateOne(query, updateVolunteer);
-        console.log(updateCount);
-        res.send(updateCount);
-    });
-
-
-
-
-    // app.post('/beVolunteer', async (req, res) => {
-    //     try {
-    //         const volunteer = req.body;
-
-    //         // Insert the volunteer document into beVolunteerCollection
-    //         const insertResult = await beVolunteerCollection.insertOne(volunteer);
-    //         if (insertResult.insertedCount !== 1) {
-    //             throw new Error('Failed to insert volunteer');
-    //         }
-
-    //         // Update the volunteer count in volunteerCollection
-    //         const jobId = new ObjectId(volunteer.jobId);
-    //         const updateResult = await volunteerCollection.updateOne(
-    //             { _id: jobId },
-    //             { $inc: { NoVolunteers: 1 } }
-    //         );
-    //         if (updateResult.modifiedCount !== 1) {
-    //             throw new Error('Failed to update volunteer count');
-    //         }
-
-    //         // Send a success response
-    //         res.status(200).json({ message: 'Volunteer added successfully' });
-    //     } catch (error) {
-    //         // Send an error response if any error occurs
-    //         console.error('Error processing /beVolunteer request:', error);
-    //         res.status(500).json({ error: 'Internal server error' });
-    //     }
-    // });
-    // be volunteer post store in other collection  database
-
-
-
-
-
-    // services related api
-
-    app.get('/needVolunteer', async (req, res) => {
-
-        // console.log(req.query.email);
-        // console.log('token owner info', req.user)
-
-        // if(req.user.email !== req.query.email){
-        //     return res.status(403).send({message: 'forbidden access'})
-        // }
-
-
-        // console.log(req.query.email);
-        // console.log('token owner info cok cok', req.cookies)
-        // 
-
-
-        const cursor = volunteerCollection.find();
-        const result = await cursor.toArray();
-        res.send(result);
-    })
-
-
-    app.get('/details/:id', async (req, res) => {
-        // const cursor = usersCollection.find()
-        const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
-        res.send(result);
-    })
-
-
-    // email using  to get all my volunteer Post
-    app.get('/needVolunteer/:email', logger, verifyToken, async (req, res) => {
-        // const cursor = usersCollection.find()
-
-        console.log(req.params.email);
-        console.log('token owner info', req.user.email)
-        if (req.user.email !== req.params.email) {
-            return res.status(403).send({ message: 'forbidden access from request Volunteer' })
-        }
-
-
-        const result = await volunteerCollection.find({ email: req.params.email }).toArray();
-        res.send(result);
-
-    })
-    // email using  to get all my request  be volunteer Post ,verifyToken
-    app.get('/requestVolunteer/:email', logger, verifyToken, async (req, res) => {
-
-        console.log(req.params.email);
-        console.log('token owner info', req.user.email)
-        if (req.user.email !== req.params.email) {
-            return res.status(403).send({ message: 'forbidden access from request Volunteer' })
-        }
-
-        // const cursor = usersCollection.find()
-        const result = await beVolunteerCollection.find({ volunteerEmail: req.params.email }).toArray();
-        res.send(result);
-    })
-
-
-
-
-
-
-    // bookings 
-    // app.get('/bookings', logger, verifyToken, async (req, res) => {
-    //     console.log(req.query.email);
-    //     console.log('token owner info', req.user)
-    //     if(req.user.email !== req.query.email){
-    //         return res.status(403).send({message: 'forbidden access'})
-    //     }
-    //     let query = {};
-    //     if (req.query?.email) {
-    //         query = { email: req.query.email }
-    //     }
-    //     const result = await bookingCollection.find(query).toArray();
-    //     res.send(result);
-    // })
-
-    // need volunteer add data base 
-    app.post('/needVolunteer', async (req, res) => {
-        const volunteer = req.body;
-        console.log(volunteer);
-        const result = await volunteerCollection.insertOne(volunteer);
-        res.send(result);
-    });
-
-
-    // be volunteer find
-    //for  update find
-    app.get('/beVolunteer/:id', async (req, res) => {
-        // const cursor = usersCollection.find()
-        const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
-        res.send(result);
-    })
-
-
-
-    //for  update find
-    app.get('/updateVolunteer/:id', async (req, res) => {
-        // const cursor = usersCollection.find()
-        const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
-        res.send(result);
-    })
-
-    // update need volunteer
-    app.put('/update/:id', async (req, res) => {
-        const id = req.params.id;
-        const user = req.body;
-        console.log(id, user);
-        const filter = { _id: new ObjectId(id) }
-        const options = { upsert: true }
-        const updateVolunteer = {
-            $set: {
-
-                // { userName, email, Thumbnail, Title, description, Location, NoVolunteers, startDate, selectedCategory }
-
-                Thumbnail: user.Thumbnail,
-                Title: user.Title,
-                description: user.description,
-                Location: user.Location,
-                NoVolunteers: user.NoVolunteers,
-                startDate: user.startDate,
-                selectedCategory: user.selectedCategory,
-
-
+            // check duplicate search this two element
+            const query1 = {
+                volunteerEmail: volunteer.volunteerEmail,
+                jobId: volunteer.jobId,
             }
-        }
-
-        const result = await volunteerCollection.updateOne(filter, updateVolunteer, options);
-        res.send(result);
-
-    })
 
 
-
-    // app.patch('/bookings/:id', async (req, res) => {
-    //     const id = req.params.id;
-    //     const filter = { _id: new ObjectId(id) };
-    //     const updatedBooking = req.body;
-    //     console.log(updatedBooking);
-    //     const updateDoc = {
-    //         $set: {
-    //             status: updatedBooking.status
-    //         },
-    //     };
-    //     const result = await bookingCollection.updateOne(filter, updateDoc);
-    //     res.send(result);
-    // })
+            // const alreadyApplied = await beVolunteerCollection.findOne(query1)
+            // console.log('here',alreadyApplied)
+            // if (alreadyApplied) {
+            //     return res
+            //         .status(400)
+            //         .send('You have Already Added')
+            // }
 
 
+            const result = await beVolunteerCollection.insertOne(volunteer);
+            // console.log(volunteer);
+            // const i =3;
 
-    // delete post need volunteer
-    app.delete('/delete/:id', async (req, res) => {
-        const id = req.params.id;
-
-        console.log('delete form database ', id);
-
-        const query = { _id: new ObjectId(id) }
-        const result = await volunteerCollection.deleteOne(query);
-        res.send(result);
-
-    })
-    // delete my request
-    app.delete('/requestDelete/:id', async (req, res) => {
-        const id = req.params.id;
-
-        console.log('delete form database ', id);
-
-        const query = { _id: new ObjectId(id) }
-        const result = await beVolunteerCollection.deleteOne(query);
-        res.send(result);
-
-    })
+            const updateVolunteer = {
+                $inc: { NoVolunteers: -1 }
+            }
+            const query = { _id: new ObjectId(volunteer.jobId) }
+            // console.log(query);
+            const updateCount = await volunteerCollection.updateOne(query, updateVolunteer)
+            res.send(result);
 
 
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-} finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-}
+        });
+
+
+        //cancel request  update no volunteer
+        app.post('/noVolunteerUpdate/:jobId', async (req, res) => {
+            const jobId = req.params.jobId;
+            console.log('request cancel id', jobId);
+
+            const updateVolunteer = {
+                $inc: { NoVolunteers: 1 }
+            };
+            const query = { _id: new ObjectId(jobId) };
+            const updateCount = await volunteerCollection.updateOne(query, updateVolunteer);
+            console.log(updateCount);
+            res.send(updateCount);
+        });
+
+        //Status change for  volunteer
+
+        app.post('/clintStatusUpdate/:jobId', async (req, res) => {
+            const jobId = req.params.jobId;
+            console.log('status pending  id', jobId);
+
+            const updateVolunteer = {
+                $set: { Status: 'pending' }
+            };
+            const query = { _id: new ObjectId(jobId) };
+            const updateCount = await beVolunteerCollection.updateOne(query, updateVolunteer);
+            console.log(updateCount);
+            res.send(updateCount);
+        });
+        app.post('/clintStatusUpdateReject/:jobId', async (req, res) => {
+            const jobId = req.params.jobId;
+            console.log('status reject  id', jobId);
+
+            const updateVolunteer = {
+                $set: { Status: 'rejected' }
+            };
+            const query = { _id: new ObjectId(jobId) };
+            const updateCount = await beVolunteerCollection.updateOne(query, updateVolunteer);
+            console.log(updateCount);
+            res.send(updateCount);
+        });
+
+
+
+
+        // app.post('/beVolunteer', async (req, res) => {
+        //     try {
+        //         const volunteer = req.body;
+
+        //         // Insert the volunteer document into beVolunteerCollection
+        //         const insertResult = await beVolunteerCollection.insertOne(volunteer);
+        //         if (insertResult.insertedCount !== 1) {
+        //             throw new Error('Failed to insert volunteer');
+        //         }
+
+        //         // Update the volunteer count in volunteerCollection
+        //         const jobId = new ObjectId(volunteer.jobId);
+        //         const updateResult = await volunteerCollection.updateOne(
+        //             { _id: jobId },
+        //             { $inc: { NoVolunteers: 1 } }
+        //         );
+        //         if (updateResult.modifiedCount !== 1) {
+        //             throw new Error('Failed to update volunteer count');
+        //         }
+
+        //         // Send a success response
+        //         res.status(200).json({ message: 'Volunteer added successfully' });
+        //     } catch (error) {
+        //         // Send an error response if any error occurs
+        //         console.error('Error processing /beVolunteer request:', error);
+        //         res.status(500).json({ error: 'Internal server error' });
+        //     }
+        // });
+        // be volunteer post store in other collection  database
+
+
+
+
+
+        // services related api
+
+        app.get('/needVolunteer', async (req, res) => {
+
+            // console.log(req.query.email);
+            // console.log('token owner info', req.user)
+
+            // if(req.user.email !== req.query.email){
+            //     return res.status(403).send({message: 'forbidden access'})
+            // }
+
+
+            // console.log(req.query.email);
+            // console.log('token owner info cok cok', req.cookies)
+            // 
+
+
+            const cursor = volunteerCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+
+        app.get('/details/:id', async (req, res) => {
+            // const cursor = usersCollection.find()
+            const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
+            res.send(result);
+        })
+
+
+        // email using  to get all my volunteer Post
+        app.get('/needVolunteer/:email', logger, verifyToken, async (req, res) => {
+            // const cursor = usersCollection.find()
+
+            console.log(req.params.email);
+            console.log('token owner info', req.user.email)
+            if (req.user.email !== req.params.email) {
+                return res.status(403).send({ message: 'forbidden access from request Volunteer' })
+            }
+
+
+            const result = await volunteerCollection.find({ email: req.params.email }).toArray();
+            res.send(result);
+
+        })
+        // email using  to get all my request  be volunteer Post ,verifyToken
+        app.get('/requestVolunteer/:email', logger, verifyToken, async (req, res) => {
+
+            console.log(req.params.email);
+            console.log('token owner info', req.user.email)
+            if (req.user.email !== req.params.email) {
+                return res.status(403).send({ message: 'forbidden access from request Volunteer' })
+            }
+
+            // const cursor = usersCollection.find()
+            const result = await beVolunteerCollection.find({ volunteerEmail: req.params.email }).toArray();
+            res.send(result);
+        })
+        // // email using  to get all my clint request  for  be volunteer Post ,verifyToken
+        app.get('/clintRequest/:email', logger, verifyToken, async (req, res) => {
+
+            console.log(req.params.email);
+            console.log('token owner info', req.user.email)
+            if (req.user.email !== req.params.email) {
+                return res.status(403).send({ message: 'forbidden access from request Volunteer' })
+            }
+
+            // const cursor = usersCollection.find()
+            const result = await beVolunteerCollection.find({ organizerEmail: req.params.email }).toArray();
+            res.send(result);
+        })
+
+
+
+
+
+        // bookings 
+        // app.get('/bookings', logger, verifyToken, async (req, res) => {
+        //     console.log(req.query.email);
+        //     console.log('token owner info', req.user)
+        //     if(req.user.email !== req.query.email){
+        //         return res.status(403).send({message: 'forbidden access'})
+        //     }
+        //     let query = {};
+        //     if (req.query?.email) {
+        //         query = { email: req.query.email }
+        //     }
+        //     const result = await bookingCollection.find(query).toArray();
+        //     res.send(result);
+        // })
+
+        // need volunteer add data base 
+        app.post('/needVolunteer', async (req, res) => {
+            const volunteer = req.body;
+            console.log(volunteer);
+            const result = await volunteerCollection.insertOne(volunteer);
+            res.send(result);
+        });
+
+
+        // be volunteer find
+        //for  update find
+        app.get('/beVolunteer/:id', async (req, res) => {
+            // const cursor = usersCollection.find()
+            const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
+            res.send(result);
+        })
+
+
+
+        //for  update find
+        app.get('/updateVolunteer/:id', async (req, res) => {
+            // const cursor = usersCollection.find()
+            const result = await volunteerCollection.findOne({ _id: new ObjectId(req.params.id), })
+            res.send(result);
+        })
+
+        // update need volunteer
+        app.put('/update/:id', async (req, res) => {
+            const id = req.params.id;
+            const user = req.body;
+            console.log(id, user);
+            const filter = { _id: new ObjectId(id) }
+            const options = { upsert: true }
+            const updateVolunteer = {
+                $set: {
+
+                    // { userName, email, Thumbnail, Title, description, Location, NoVolunteers, startDate, selectedCategory }
+
+                    Thumbnail: user.Thumbnail,
+                    Title: user.Title,
+                    description: user.description,
+                    Location: user.Location,
+                    NoVolunteers: user.NoVolunteers,
+                    startDate: user.startDate,
+                    selectedCategory: user.selectedCategory,
+
+
+                }
+            }
+
+            const result = await volunteerCollection.updateOne(filter, updateVolunteer, options);
+            res.send(result);
+
+        })
+
+
+
+        // app.patch('/bookings/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const filter = { _id: new ObjectId(id) };
+        //     const updatedBooking = req.body;
+        //     console.log(updatedBooking);
+        //     const updateDoc = {
+        //         $set: {
+        //             status: updatedBooking.status
+        //         },
+        //     };
+        //     const result = await bookingCollection.updateOne(filter, updateDoc);
+        //     res.send(result);
+        // })
+
+
+
+        // delete post need volunteer
+        app.delete('/delete/:id', async (req, res) => {
+            const id = req.params.id;
+
+            console.log('delete form database ', id);
+
+            const query = { _id: new ObjectId(id) }
+            const result = await volunteerCollection.deleteOne(query);
+            res.send(result);
+
+        })
+        // delete my request
+        app.delete('/requestDelete/:id', async (req, res) => {
+            const id = req.params.id;
+
+            console.log('delete form database ', id);
+
+            const query = { _id: new ObjectId(id) }
+            const result = await beVolunteerCollection.deleteOne(query);
+            res.send(result);
+
+        })
+
+
+        // Send a ping to confirm a successful connection
+        await client.db("admin").command({ ping: 1 });
+        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    } finally {
+        // Ensures that the client will close when you finish/error
+        // await client.close();
+    }
 }
 run().catch(console.dir);
 
